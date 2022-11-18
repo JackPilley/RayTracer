@@ -141,6 +141,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="RayTracer.cpp" />
+    <ClCompile Include="Scene\Scene.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Scene\Camera.hpp" />
+    <ClInclude Include="Scene\Light.hpp" />
+    <ClInclude Include="Scene\Scene.hpp" />
+    <ClInclude Include="Scene\Sphere.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
