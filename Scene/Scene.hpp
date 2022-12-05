@@ -2,12 +2,15 @@
 
 #include <vector>
 #include <string>
+#include <sstream>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
 #include "Camera.hpp"
 #include "Light.hpp"
 #include "Sphere.hpp"
+#include "Ray.hpp"
+#include "Image.h"
 
 class Scene
 {
@@ -24,6 +27,13 @@ private:
 
 	std::string outputName;
 
+	void BuildSphere(std::stringstream& ss);
+	void BuildLight(std::stringstream& ss);
+
 public:
 	Scene(std::string filePath);
+	// Recursively simulate a single ray
+	Color Raytrace(Ray ray);
+	// Render the full scene image
+	Image Render();
 };
