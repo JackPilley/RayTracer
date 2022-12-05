@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
+#include <string>
 #include <glm/vec3.hpp>
+#include <utility>
 
 struct Color
 {
@@ -12,9 +14,11 @@ struct Color
 
 	Color(glm::vec3 col)
 	{
-		r = (uint8_t)(col.r * 255);
-		g = (uint8_t)(col.g * 255);
-		b = (uint8_t)(col.b * 255);
+		// Clamps the values to [0,1] and then converts to [0,255]
+		// Explicit cast is because Visual Studio was warning about precision loss, but it isn't really needed
+		r = (uint8_t)(std::fminf(col.r, 1.0f) * 255.0f);
+		g = (uint8_t)(std::fminf(col.g, 1.0f) * 255.0f);
+		b = (uint8_t)(std::fminf(col.b, 1.0f) * 255.0f);
 	}
 
 	Color(glm::u8vec3 col)
@@ -27,6 +31,8 @@ struct Color
 
 struct Image
 {
+	std::string name;
+
 	uint32_t x;
 	uint32_t y;
 

@@ -36,4 +36,7 @@ public:
 	Color Raytrace(Ray ray);
 	// Render the full scene image
 	Image Render();
+
+	const glm::u32vec2& GetResolution() const { return resolution; };
+	const std::string& GetOutputName() const { return outputName; };
 };

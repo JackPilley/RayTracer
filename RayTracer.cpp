@@ -2,31 +2,59 @@
 #include <fstream>
 #include <string>
 #include <optional>
+#include <cstdio>
 
 #include "Scene/Scene.hpp"
 #include "Scene/Ray.hpp"
 #include "Scene/Sphere.hpp"
 
+#pragma warning(disable:4996)
+
+void save_imageP6(int Width, int Height, const char* fname, unsigned char* pixels) {
+    FILE* fp;
+    const int maxVal = 255;
+
+    //Reflect the image vertically
+    uint32_t rowLength = Width * 3;
+    uint8_t* temp = new uint8_t[rowLength];
+
+    for (uint64_t i = 0; i < Height / 2; ++i)
+    {
+        uint8_t* row1 = pixels + i * rowLength;
+        uint8_t* row2 = pixels + (Height - i - 1) * rowLength;
+
+        memcpy(temp, row1, rowLength);
+        memcpy(row1, row2, rowLength);
+        memcpy(row2, temp, rowLength);
+    }
+
+    delete[] temp;
+
+    printf("Saving image %s: %d x %d\n", fname, Width, Height);
+    fp = fopen(fname, "wb");
+    if (!fp) {
+        printf("Unable to open file '%s'\n", fname);
+        return;
+    }
+    fprintf(fp, "P6\n");
+    fprintf(fp, "%d %d\n", Width, Height);
+    fprintf(fp, "%d\n", maxVal);
+
+    for (int j = 0; j < Height; j++) {
+        fwrite(&pixels[j * Width * 3], 3, Width, fp);
+    }
+
+    fclose(fp);
+}
+
 int main(int argc, char** argv)
 {
-    //std::string filename(argv[1]);
-    //Scene scene(filename);
+    std::string filename(argv[1]);
+    Scene scene(filename);
 
-    Sphere sphere("s", 3, 1, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0);
-    Ray ray(glm::vec3(1, 3, 0), glm::normalize(glm::vec3(1, -0.75, 0)));
+    Image image = scene.Render();
 
-    std::optional<Intersection> result = ray.SphereIntersection(sphere);
-
-    if (result)
-    {
-        Intersection intersect = result.value();
-        std::cout << result->t << " At " << intersect.position.x << " " << intersect.position.y << " " << intersect.position.z 
-            << " Normal " << intersect.normal.x << " " << intersect.normal.y << " " << intersect.normal.z << "\n";
-    }
-    else 
-    {
-        std::cout << "No Intersection" << "\n";
-    }
+    save_imageP6(image.x, image.y, image.name.c_str(), reinterpret_cast<unsigned char*>(image.pixels));
 
     return 0;
 }

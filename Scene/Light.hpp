@@ -13,4 +13,7 @@ private:
 
 public:
 	Light(std::string name, float posX, float posY, float posZ, float r, float g, float b);
+
+	const glm::vec3& GetPosition() const { return position; };
+	const glm::vec3& GetIntensity() const { return intensity; };
 };

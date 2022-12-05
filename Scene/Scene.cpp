@@ -111,10 +111,37 @@ Color Scene::Raytrace(Ray ray)
 
 	if (!closestIntersect)
 	{
-		return Color{ ambientColor };
+		return Color{ backgroundColor };
 	}
 
-	return Color{closestIntersect->first.GetColor()};
+	const Sphere& intersectedSphere = closestIntersect->first;
+	const Intersection& intersection = closestIntersect->second;
+
+	const glm::vec3 baseColor = intersectedSphere.GetColor();
+
+	glm::vec3 color = baseColor * ambientColor * intersectedSphere.GetAmbientFactor();
+
+	for (const Light& light : lights)
+	{
+		glm::vec3 lightDir = glm::normalize(light.GetPosition() - intersection.position);
+		float lightDot = glm::dot(lightDir, intersection.normal);
+
+		if (lightDot > 0)
+		{
+			// Add diffuse component
+			color += light.GetIntensity() * baseColor * intersectedSphere.GetDiffuseFactor() * lightDot;
+
+			glm::vec3 viewDir = glm::normalize(-intersection.position);
+			glm::vec3 reflected = glm::reflect(-lightDir, intersection.normal);
+
+			// Add specular component
+			color += std::powf(glm::dot(reflected, viewDir), intersectedSphere.GetSpecularExponent()) *
+				light.GetIntensity() *
+				intersectedSphere.GetSpecularFactor();
+		}
+	}
+
+	return color;
 }
 
 Image Scene::Render()
@@ -122,17 +149,36 @@ Image Scene::Render()
 	Image image;
 	image.x = resolution.x;
 	image.y = resolution.y;
+	image.name = outputName;
 
 	//Casting to a 64 bit integers shouldn't really be needed, but it stops VS from complaining about possible overflows
 	image.pixels = new Color[static_cast<uint64_t>(image.x) * static_cast<uint64_t>(image.y)];
 
+	float width = camera.right - camera.left;
+	float height = camera.top - camera.bottom;
+
+	float xStep = width / resolution.x;
+	float yStep = width / resolution.y;
+
+	float posX = camera.left;
+	float posY = camera.bottom;
+	float posZ = -camera.near;
 
 	for (uint32_t y = 0; y < resolution.y; ++y)
 	{
 		for (uint32_t x = 0; x < resolution.x; ++x)
 		{
+			glm::vec3 pos(posX, posY, posZ);
+			Ray ray(pos, pos);
 
+			Color color = Raytrace(ray);
+
+			image.pixels[x + y * resolution.x] = color;
+			
+			posX += xStep;
 		}
+		posY += yStep;
+		posX = camera.left;
 	}
 
 	return image;
