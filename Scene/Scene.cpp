@@ -93,10 +93,12 @@ void Scene::BuildLight(std::stringstream& ss)
 	lights.emplace_back(name, px, py, pz, r, g, b);
 }
 
-Color Scene::Raytrace(Ray ray)
+glm::vec3 Scene::RaytraceHelper(Ray ray, uint32_t depth, bool firstIteration) const
 {
+	if (depth == 0) return { 0,0,0 };
+
 	std::optional<std::pair<Sphere, Intersection>> closestIntersect{};
-	
+
 	for (const Sphere& sphere : spheres)
 	{
 		std::optional<Intersection> intersect = ray.SphereIntersection(sphere);
@@ -111,7 +113,10 @@ Color Scene::Raytrace(Ray ray)
 
 	if (!closestIntersect)
 	{
-		return Color{ backgroundColor };
+		if (firstIteration)
+			return { backgroundColor };
+		else
+			return { 0,0,0 };
 	}
 
 	const Sphere& intersectedSphere = closestIntersect->first;
@@ -123,8 +128,27 @@ Color Scene::Raytrace(Ray ray)
 
 	for (const Light& light : lights)
 	{
-		glm::vec3 lightDir = glm::normalize(light.GetPosition() - intersection.position);
-		float lightDot = glm::dot(lightDir, intersection.normal);
+		glm::vec3 lightDir = light.GetPosition() - intersection.position;
+
+		// Check for shadows
+		bool shadow = false;
+		for (const Sphere& sphere : spheres)
+		{
+			Ray shadowRay{ intersection.position + lightDir * 0.0001f, lightDir };
+			std::optional<Intersection> shadowIntersect = shadowRay.SphereIntersection(sphere);
+
+			if (shadowIntersect && shadowIntersect.value().t < 1.0f)
+			{
+				shadow = true;
+				break;
+			}
+		}
+		// Skip this light if it's blocked
+		if (shadow) continue;
+
+		lightDir = glm::normalize(lightDir);
+
+		const float lightDot = glm::dot(lightDir, intersection.normal);
 
 		if (lightDot > 0)
 		{
@@ -135,16 +159,28 @@ Color Scene::Raytrace(Ray ray)
 			glm::vec3 reflected = glm::reflect(-lightDir, intersection.normal);
 
 			// Add specular component
-			color += std::powf(glm::dot(reflected, viewDir), intersectedSphere.GetSpecularExponent()) *
+			color += std::powf(std::max(glm::dot(reflected, viewDir), 0.0f), intersectedSphere.GetSpecularExponent()) *
 				light.GetIntensity() *
 				intersectedSphere.GetSpecularFactor();
 		}
 	}
 
+	if (intersectedSphere.GetReflectanceFactor() > 0)
+	{
+		glm::vec3 reflectedDir = glm::reflect(ray.GetDirection(), intersection.normal);
+		glm::vec3 reflectionStart = intersection.position + reflectedDir * 0.0001f;
+		color += RaytraceHelper(Ray(reflectionStart, reflectedDir), depth - 1, false) * intersectedSphere.GetReflectanceFactor();
+	}
+
 	return color;
 }
 
-Image Scene::Render()
+Color Scene::Raytrace(Ray ray) const
+{
+	return RaytraceHelper(ray, 4, true);
+}
+
+Image Scene::Render() const
 {
 	Image image;
 	image.x = resolution.x;
@@ -154,11 +190,11 @@ Image Scene::Render()
 	//Casting to a 64 bit integers shouldn't really be needed, but it stops VS from complaining about possible overflows
 	image.pixels = new Color[static_cast<uint64_t>(image.x) * static_cast<uint64_t>(image.y)];
 
-	float width = camera.right - camera.left;
-	float height = camera.top - camera.bottom;
+	const float width = camera.right - camera.left;
+	const float height = camera.top - camera.bottom;
 
-	float xStep = width / resolution.x;
-	float yStep = width / resolution.y;
+	const float xStep = width / resolution.x;
+	const float yStep = width / resolution.y;
 
 	float posX = camera.left;
 	float posY = camera.bottom;

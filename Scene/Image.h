@@ -21,12 +21,11 @@ struct Color
 		b = (uint8_t)(std::fminf(col.b, 1.0f) * 255.0f);
 	}
 
-	Color(glm::u8vec3 col)
-	{
-		r = col.r;
-		g = col.g;
-		b = col.b;
-	}
+	Color(glm::u8vec3 col):
+		r(col.r), g(col.g), b(col.b) {}
+
+	Color(uint8_t r, uint8_t g, uint8_t b):
+		r(r), g(g), b(b) {}
 };
 
 struct Image

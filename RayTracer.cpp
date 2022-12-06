@@ -4,6 +4,8 @@
 #include <optional>
 #include <cstdio>
 
+#include <chrono>
+
 #include "Scene/Scene.hpp"
 #include "Scene/Ray.hpp"
 #include "Scene/Sphere.hpp"
@@ -49,10 +51,24 @@ void save_imageP6(int Width, int Height, const char* fname, unsigned char* pixel
 
 int main(int argc, char** argv)
 {
+    using namespace std::chrono;
+    typedef high_resolution_clock Clock;
+
     std::string filename(argv[1]);
+    
+    std::cout << "Start...\n";
+
+    auto t1 = Clock::now();
+
     Scene scene(filename);
 
     Image image = scene.Render();
+
+    auto t2 = Clock::now();
+
+    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+
+    std::cout << "Done in " << time_span.count() << " seconds\n";
 
     save_imageP6(image.x, image.y, image.name.c_str(), reinterpret_cast<unsigned char*>(image.pixels));
 

@@ -45,6 +45,8 @@ std::optional<Intersection> Ray::SphereIntersection(const Sphere& sphere) const
 	glm::vec4 canonicalIntersectPoint4 = glm::vec4(pos + dir * t, 0);
 	glm::vec3 intersectionNormal = sphere.GetInverseTransposeMatrix() * canonicalIntersectPoint4;
 
+	if (tb < 0) intersectionNormal *= -1;
+
 	return Intersection{ intersectPosition, glm::normalize(intersectionNormal), t};
 }
 

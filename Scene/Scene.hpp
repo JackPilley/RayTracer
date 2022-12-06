@@ -29,13 +29,14 @@ private:
 
 	void BuildSphere(std::stringstream& ss);
 	void BuildLight(std::stringstream& ss);
+	glm::vec3 RaytraceHelper(Ray ray, uint32_t depth, bool firstIteration) const;
 
 public:
 	Scene(std::string filePath);
 	// Recursively simulate a single ray
-	Color Raytrace(Ray ray);
+	Color Raytrace(Ray ray) const;
 	// Render the full scene image
-	Image Render();
+	Image Render() const;
 
 	const glm::u32vec2& GetResolution() const { return resolution; };
 	const std::string& GetOutputName() const { return outputName; };
